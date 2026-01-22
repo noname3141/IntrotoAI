@@ -92,14 +92,14 @@ class YantraCollector:
         # pass  # TO DO
         tup = []
         # north
-        if position[0]+1 < self.n and position[1] < self.n and self.grid[position[0]+1][position[1]] != '#' and self.grid[position[0]+1][position[1]] != 'T':
-                tup.append((position[0]+1, position[1]))
+        if position[0]-1 >= 0 and position[1] >= 0 and self.grid[position[0]-1][position[1]] != '#' and self.grid[position[0]-1][position[1]] != 'T':
+                tup.append((position[0]-1, position[1]))
         #east
         if position[0] < self.n and position[1]+1 < self.n and self.grid[position[0]][position[1]+1] != '#' and self.grid[position[0]][position[1]+1] != 'T':
                 tup.append((position[0], position[1]+1))
         #south
-        if position[0]-1 >= 0 and position[1] >= 0 and self.grid[position[0]-1][position[1]] != '#' and self.grid[position[0]-1][position[1]] != 'T':
-                tup.append((position[0]-1, position[1]))
+        if position[0]+1 < self.n and position[1] < self.n and self.grid[position[0]+1][position[1]] != '#' and self.grid[position[0]+1][position[1]] != 'T':
+                tup.append((position[0]+1, position[1]))
         #west
         if position[0] >= 0 and position[1]-1 >= 0 and self.grid[position[0]][position[1]-1] != '#' and self.grid[position[0]][position[1]-1] != 'T':
                 tup.append((position[0], position[1]-1))
@@ -115,7 +115,6 @@ class YantraCollector:
         """
         # pass  # TO DO
         i = 0
-        Exp = [start]
         Front = []
         paths = [[start]]
         while (self.goal_test(Exp[i]) == False) :
@@ -124,9 +123,47 @@ class YantraCollector:
                 if j in Exp:
                     S.remove(j)
             Front.extend(S)
+            for l in paths:
+                if l[-1] == Exp[i]:
+                    pte = l
+            for k in S:
+                temp = l + [k]
+                paths.append(temp)
+            paths.remove(pte)
             Exp.append(Front[0])
-            self.total_explored_nodes += 1;
-            self.total_frontier_nodes = len(Front);
+            self.total_explored_nodes += 1
+            self.total_frontier_nodes = len(Front)
+            Front.pop(0)
+            i += 1
+            print(Exp)
+        for i in paths:
+            if i[-1] == self.revealed_yantra:
+                path = i
+        return Exp
+    
+    def dfs(self, start, goal):
+        """
+        Performs Depth-First Search (DFS) to find the path to the goal.
+
+        Args:
+            start (tuple): The starting position.
+            goal (tuple): The goal position.
+        """
+        # pass  # TO DO
+        i = 0
+        Exp = [start]
+        Front = []
+        paths = [[start]]
+        while (self.goal_test(Exp[i]) == False) :
+            S = self.get_neighbors(Exp[i])
+            for j in S:
+                if j in Exp:
+                    S.remove(j)
+            for k in range(len(S)-1, 0):
+                Front.insert(0, S[k])
+            Exp.append(Front[0])
+            self.total_explored_nodes += 1
+            self.total_frontier_nodes = len(Front)
             Front.pop(0)
             i += 1
         return Exp
@@ -141,11 +178,16 @@ class YantraCollector:
         # pass  # TO DO
         i=0
         path = []
+        Y = [self.start]
         S = self.find_all_yantras()
-        self.bfs(self.start, self.revealed_yantra)
-        for j in range(1, len(self.find_all_yantras()) - 1):
-            bfs(self.bfs(S[j], S[j+1]))
-            i+=1;
+        for i in range(1, len(S)+1):
+            Y.append(S[i])
+        Y.append(self.find_position('E'))
+        print(Y)
+        for i in range(0, len(Y)-1):
+            P = self.bfs(Y[i], Y[i+1])
+            path.extend(P)
+            self.reveal_next_yantra_or_exit()
         return path, self.total_frontier_nodes, self.total_explored_nodes
 
 
