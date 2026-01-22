@@ -1,5 +1,7 @@
 # Filename: l1.py
 
+Exp = []
+
 class YantraCollector:
     """
     YantraCollector class to solve the yantra collection puzzle.
@@ -115,7 +117,7 @@ class YantraCollector:
         """
         # pass  # TO DO
         i = 0
-        Exp=[start]
+        Exp = [start]
         Front = []
         paths = [[start]]
         while(Exp[i] != self.revealed_yantra):
@@ -132,7 +134,11 @@ class YantraCollector:
                 paths.append(temp)
             paths.remove(pte)
             Exp.append(Front[0])
+            print("Front:")
+            print(Front)
             Front.pop(0)
+            print("Exp:")
+            print(Exp)
             i += 1
         for i in paths:
             if i[-1] == self.revealed_yantra:
@@ -160,7 +166,6 @@ class YantraCollector:
             for j in S:
                 if j in Exp:
                     S.remove(j)
-            Front.extend(S)
             for j in reversed(S):
                 Front.insert(0, j)
             for l in paths:
@@ -171,7 +176,11 @@ class YantraCollector:
                 paths.append(temp)
             paths.remove(pte)
             Exp.append(Front[0])
+            print("Front:")
+            print(Front)
             Front.pop(0)
+            print("Exp:")
+            print(Exp)
             i += 1
         for i in paths:
             if i[-1] == self.revealed_yantra:
@@ -200,6 +209,8 @@ class YantraCollector:
         Y.append(self.find_position('E'))
         for i in range(0, len(Y)-1):
             P, fron, exp = self.bfs(Y[i], Y[i+1])
+            if((self.find_position('E')) != P[-1]):
+                P.remove(P[-1])
             path.extend(P)
             front_nodes += fron
             exp_nodes += exp
