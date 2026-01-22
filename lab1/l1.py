@@ -115,6 +115,7 @@ class YantraCollector:
         """
         # pass  # TO DO
         i = 0
+        Exp = [start]
         Front = []
         paths = [[start]]
         while (self.goal_test(Exp[i]) == False) :
@@ -188,6 +189,18 @@ class YantraCollector:
             P = self.bfs(Y[i], Y[i+1])
             path.extend(P)
             self.reveal_next_yantra_or_exit()
+        grid = [
+        ['P', '.', '.', '#', 'Y2'],
+        ['#', 'T', '.', '#', '.'],
+        ['.', '.', 'Y1', '.', '.'],
+        ['#', '.', '.', 'T', '.'],
+        ['.', '.', '.', '.', 'E']
+        ]
+        for i in range(5):
+            s = ''
+            for j in range(5):
+                s += grid[i][j]+" "
+            print(f"{s}\n")
         return path, self.total_frontier_nodes, self.total_explored_nodes
 
 
