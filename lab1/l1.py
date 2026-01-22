@@ -115,10 +115,10 @@ class YantraCollector:
         """
         # pass  # TO DO
         i = 0
-        Exp = [start]
+        Exp=[start]
         Front = []
         paths = [[start]]
-        while (self.goal_test(Exp[i]) == False) :
+        while(Exp[i] != self.revealed_yantra):
             S = self.get_neighbors(Exp[i])
             for j in S:
                 if j in Exp:
@@ -128,19 +128,19 @@ class YantraCollector:
                 if l[-1] == Exp[i]:
                     pte = l
             for k in S:
-                temp = l + [k]
+                temp = pte + [k]
                 paths.append(temp)
             paths.remove(pte)
             Exp.append(Front[0])
-            self.total_explored_nodes += 1
-            self.total_frontier_nodes = len(Front)
             Front.pop(0)
             i += 1
-            print(Exp)
         for i in paths:
             if i[-1] == self.revealed_yantra:
                 path = i
-        return Exp
+        self.total_frontier_nodes = len(Front)
+        self.total_explored_nodes = len(Exp)
+        self.reveal_next_yantra_or_exit()
+        return path, self.total_frontier_nodes, self.total_explored_nodes
     
     def dfs(self, start, goal):
         """
@@ -152,22 +152,34 @@ class YantraCollector:
         """
         # pass  # TO DO
         i = 0
-        Exp = [start]
+        Exp=[start]
         Front = []
         paths = [[start]]
-        while (self.goal_test(Exp[i]) == False) :
+        while(Exp[i] != self.revealed_yantra):
             S = self.get_neighbors(Exp[i])
             for j in S:
                 if j in Exp:
                     S.remove(j)
-            for k in range(len(S)-1, 0):
-                Front.insert(0, S[k])
+            Front.extend(S)
+            for j in reversed(S):
+                Front.insert(0, j)
+            for l in paths:
+                if l[-1] == Exp[i]:
+                    pte = l
+            for k in S:
+                temp = pte + [k]
+                paths.append(temp)
+            paths.remove(pte)
             Exp.append(Front[0])
-            self.total_explored_nodes += 1
-            self.total_frontier_nodes = len(Front)
             Front.pop(0)
             i += 1
-        return Exp
+        for i in paths:
+            if i[-1] == self.revealed_yantra:
+                path = i
+        self.total_frontier_nodes = len(Front)
+        self.total_explored_nodes = len(Exp)
+        self.reveal_next_yantra_or_exit()
+        return path, self.total_frontier_nodes, self.total_explored_nodes
 
     def solve(self, strategy):
         """
@@ -178,17 +190,19 @@ class YantraCollector:
         """
         # pass  # TO DO
         i=0
+        front_nodes = 0
+        exp_nodes = 0
         path = []
         Y = [self.start]
         S = self.find_all_yantras()
         for i in range(1, len(S)+1):
             Y.append(S[i])
         Y.append(self.find_position('E'))
-        print(Y)
         for i in range(0, len(Y)-1):
-            P = self.bfs(Y[i], Y[i+1])
+            P, fron, exp = self.bfs(Y[i], Y[i+1])
             path.extend(P)
-            self.reveal_next_yantra_or_exit()
+            front_nodes += fron
+            exp_nodes += exp
         grid = [
         ['P', '.', '.', '#', 'Y2'],
         ['#', 'T', '.', '#', '.'],
@@ -201,7 +215,7 @@ class YantraCollector:
             for j in range(5):
                 s += grid[i][j]+" "
             print(f"{s}\n")
-        return path, self.total_frontier_nodes, self.total_explored_nodes
+        return path, front_nodes, exp_nodes
 
 
 if __name__ == "__main__":
