@@ -118,7 +118,7 @@ class YantraCollector:
         Exp = [start]
         Front = []
         paths = [[start]]
-        while(Exp[i] != self.revealed_yantra):
+        while(self.goal_test(Exp[i]) == False):
             S = self.get_neighbors(Exp[i])
             for j in S:
                 if j not in Exp and j not in Front:
@@ -157,7 +157,7 @@ class YantraCollector:
         Front = []
         paths = [[start]]
         A=[]
-        while(Exp[i] != self.revealed_yantra):
+        while(self.goal_test(Exp[i]) == False):
             S = self.get_neighbors(Exp[i])
             for j in reversed(S):
                 if j not in Exp and j not in Front:
