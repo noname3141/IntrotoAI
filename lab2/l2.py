@@ -108,7 +108,12 @@ class YantraCollector:
         Returns:
             bool: True if position matches revealed_yantra, False otherwise.
         """
-        pass  # TO DO 
+        # pass  # TO DO 
+        if self.grid[position[0]][position[1]] == self.grid[self.revealed_yantra[0]][self.revealed_yantra[1]]:
+            return True
+        elif self.grid[i][j] == 'E':
+            return True
+        return False
 
     def get_neighbors(self, position):
         """
@@ -122,7 +127,21 @@ class YantraCollector:
             list: A list of neighboring positions [(row, col), ...]. 
                   should include all valid neighbors in the expected order.
         """
-        pass  # TO DO 
+        # pass  # TO DO 
+        tup = []
+        # north
+        if position[0]-1 >= 0 and position[1] >= 0 and self.grid[position[0]-1][position[1]] != '#' and self.grid[position[0]-1][position[1]] != 'T':
+                tup.append((position[0]-1, position[1]))
+        #east
+        if position[0] < self.n and position[1]+1 < self.n and self.grid[position[0]][position[1]+1] != '#' and self.grid[position[0]][position[1]+1] != 'T':
+                tup.append((position[0], position[1]+1))
+        #south
+        if position[0]+1 < self.n and position[1] < self.n and self.grid[position[0]+1][position[1]] != '#' and self.grid[position[0]+1][position[1]] != 'T':
+                tup.append((position[0]+1, position[1]))
+        #west
+        if position[0] >= 0 and position[1]-1 >= 0 and self.grid[position[0]][position[1]-1] != '#' and self.grid[position[0]][position[1]-1] != 'T':
+                tup.append((position[0], position[1]-1))
+        return tup
 
     def ucs(self, start, goal):
         """
