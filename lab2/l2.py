@@ -236,7 +236,7 @@ class YantraCollector:
         Front = [(self.heuristic(start, goal), start, [start], 0)]
         explored_set = set()
         while(Front):
-            self.sort_to_priority(Front);
+            self.sort_to_priority(Front)
             heu_cost, node, path, curr_cost = Front.pop(0)
             if self.goal_test(node):
                 Exp.append(node)
@@ -256,7 +256,6 @@ class YantraCollector:
                         new_heu_cost = self.heuristic(neighbor, goal)
                         new_curr_cost = curr_cost + self.cost_map[neighbor]
                         Front.append((new_heu_cost, neighbor, path + [neighbor], new_curr_cost))
-
         return None, 0, 0, 0
 
     def a_star(self, start, goal):
@@ -277,7 +276,7 @@ class YantraCollector:
         explored_set = set()
         cost = 0
         while(Front):
-            self.sort_to_priority(Front);
+            self.sort_to_priority(Front)
             heu_cost, node, path, curr_cost = Front.pop(0)
             if self.goal_test(node):
                 Exp.append(node)
@@ -288,10 +287,14 @@ class YantraCollector:
             Exp.append(node)
             explored_set.add(node)
             for neighbor in self.get_neighbors(node):
+                new_g = curr_cost + self.cost_map[neighbor]
+                new_f = new_g + self.heuristic(neighbor, goal)
                 infront = 0
                 if neighbor not in explored_set:
-                    for n in Front:
+                    for index,n in enumerate(Front):
                         if neighbor == n[1]:
+                            if new_f < n[0]:
+                                Front[index] = (new_f, neighbor, path + [neighbor], new_g)
                             infront = 1
                     if infront == 0:
                         new_curr_cost = curr_cost + self.cost_map[neighbor]
