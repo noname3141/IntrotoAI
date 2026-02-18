@@ -207,18 +207,19 @@ class YantraCollector:
             int: The estimated cost to the goal.
         """
         # pass  # TO DO
+        import math
         x =  position[0] + goal[0]
         y = goal[1] + position[1]
-        x = [x/2]
-        y = [y/2]
+        x = x//2
+        y = y//2
         px = position[0]
         py = position[1]
         gx = goal[0]
         gy = goal[1]
-
-        
-
-        return abs(x) + abs(y)
+        rx = math.sin(x)**2+math.cos(px)**2 - gx
+        ry = math.sin(y)**2+math.cos(py)**2 - gy
+         
+        return x**2 + y**2
 
     def gbfs(self, start, goal):
         """
@@ -337,11 +338,6 @@ class YantraCollector:
             front_nodes += fron
             exp_nodes += exp
             tot_cost += cost
-        print('''['P', 2, '#', 5, 'Y2'],
-['T', 2, 3, '#', 1],
-[0, 7, 'Y1', 4, 2],
-['#', 'T', 2, 1, 3],
-[1, 3, 0, 2, 'E']''')
         return path, front_nodes, exp_nodes, tot_cost
 
 if __name__ == "__main__":
@@ -354,7 +350,7 @@ if __name__ == "__main__":
     ]
 
     game = YantraCollector(grid)
-    strategy = "A*"  # or "A*" or "GBFS"
+    strategy = "UCS"  # or "A*" or "GBFS"
     result = game.solve(strategy)
     
     if result:
