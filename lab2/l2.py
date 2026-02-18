@@ -25,10 +25,10 @@ class YantraCollector:
         self.yantras = self.find_all_yantras()
         self.revealed_yantra = self.find_position('Y1')
         ## use these variables if needed
-        # self.collected_yantras = 0
-        # self.total_frontier_nodes = 0
-        # self.total_explored_nodes = 0
-        # self.total_cost = 0
+        self.collected_yantras = 0
+        self.total_frontier_nodes = 0
+        self.total_explored_nodes = 0
+        self.total_cost = 0
         self.cost_map = self.initialize_cost_map()
         
     def initialize_cost_map(self):
@@ -109,11 +109,12 @@ class YantraCollector:
             bool: True if position matches revealed_yantra, False otherwise.
         """
         # pass  # TO DO 
-        if self.grid[position[0]][position[1]] == self.grid[self.revealed_yantra[0]][self.revealed_yantra[1]]:
-            return True
-        elif self.grid[i][j] == 'E':
-            return True
-        return False
+        x1 = self.revealed_yantra[0]
+        y1 = self.revealed_yantra[1]
+        if self.grid[position[0]][position[1]] == self.grid[x1][y1]:
+                return True
+        else:
+                return False
 
     def get_neighbors(self, position):
         """
@@ -130,23 +131,33 @@ class YantraCollector:
         # pass  # TO DO 
         tup = []
         # north
-        if position[0]-1 >= 0 and position[1] >= 0 and self.grid[position[0]-1][position[1]] != '#' and self.grid[position[0]-1][position[1]] != 'T':
+        if position[0]-1 >= 0 and position[1] >= 0 and self.grid[position[0]-1][position[1]] != '#':
                 tup.append((position[0]-1, position[1]))
         #east
-        if position[0] < self.n and position[1]+1 < self.n and self.grid[position[0]][position[1]+1] != '#' and self.grid[position[0]][position[1]+1] != 'T':
+        if position[0] < self.n and position[1]+1 < self.n and self.grid[position[0]][position[1]+1] != '#':
                 tup.append((position[0], position[1]+1))
         #south
-        if position[0]+1 < self.n and position[1] < self.n and self.grid[position[0]+1][position[1]] != '#' and self.grid[position[0]+1][position[1]] != 'T':
+        if position[0]+1 < self.n and position[1] < self.n and self.grid[position[0]+1][position[1]] != '#':
                 tup.append((position[0]+1, position[1]))
         #west
-        if position[0] >= 0 and position[1]-1 >= 0 and self.grid[position[0]][position[1]-1] != '#' and self.grid[position[0]][position[1]-1] != 'T':
+        if position[0] >= 0 and position[1]-1 >= 0 and self.grid[position[0]][position[1]-1] != '#':
                 tup.append((position[0], position[1]-1))
         return tup
+    
+    def sort_to_priority(self, Front):
+        for i in range(0,len(Front)):
+            for j in range(0,len(Front)-i-1):
+                if Front[j][0] > Front[j+1][0]:
+                    temp = Front[j+1]
+                    Front[j+1] = Front[j]
+                    Front[j] = temp
+        return Front
+            
 
     def ucs(self, start, goal):
         """
         Performs Uniform Cost Search (UCS) to find the path to the goal.
-        Args:
+        Args:''
             start (tuple): The starting position.
             goal (tuple): The goal position.
         Returns:
@@ -155,8 +166,35 @@ class YantraCollector:
                    - frontier_count: Number of nodes in the frontier list at the time of exiting the function.
                    - explored_count: Number of nodes in the explored list at the time of exiting the function.
                    - path_cost: Total cost of the path.
+    # pass  # TO DO 
         """
-        pass  # TO DO 
+        i = 0
+        Exp = []
+        Front = [(0, start, [start])]
+        explored_set = set()
+        cost = 0
+        while(Front):
+            self.sort_to_priority(Front);
+            cum_cost, node, path = Front.pop(0)
+            if self.goal_test(node):
+                Exp.append(node)
+                self.total_frontier_nodes = len(Front)
+                self.total_explored_nodes = len(Exp)
+                self.reveal_next_yantra_or_exit()
+                return path, self.total_frontier_nodes, self.total_explored_nodes, cum_cost
+            Exp.append(node)
+            explored_set.add(node)
+            for neighbor in self.get_neighbors(node):
+                infront = 0
+                if neighbor not in explored_set:
+                    for n in Front:
+                        if neighbor == n[1]:
+                            infront = 1
+                    if infront == 0:
+                        new_cost = cum_cost + self.cost_map[neighbor]
+                        Front.append((new_cost, neighbor, path + [neighbor]))
+
+        return None, 0, 0
 
     def heuristic(self, position, goal):
         """
@@ -168,7 +206,19 @@ class YantraCollector:
         Returns:
             int: The estimated cost to the goal.
         """
-        pass  # TO DO 
+        # pass  # TO DO
+        x =  position[0] + goal[0]
+        y = goal[1] + position[1]
+        x = [x/2]
+        y = [y/2]
+        px = position[0]
+        py = position[1]
+        gx = goal[0]
+        gy = goal[1]
+
+        
+
+        return abs(x) + abs(y)
 
     def gbfs(self, start, goal):
         """
@@ -181,7 +231,32 @@ class YantraCollector:
                    - explored_count: Number of nodes in the explored list at the time of exiting the function.
                    - path_cost: Total cost of the path.
         """
-        pass  # TO DO 
+        Exp = []
+        Front = [(self.heuristic(start, goal), start, [start], 0)]
+        explored_set = set()
+        while(Front):
+            self.sort_to_priority(Front);
+            heu_cost, node, path, curr_cost = Front.pop(0)
+            if self.goal_test(node):
+                Exp.append(node)
+                self.total_frontier_nodes = len(Front)
+                self.total_explored_nodes = len(Exp)
+                self.reveal_next_yantra_or_exit()
+                return path, self.total_frontier_nodes, self.total_explored_nodes, curr_cost
+            Exp.append(node)
+            explored_set.add(node)
+            for neighbor in self.get_neighbors(node):
+                infront = 0
+                if neighbor not in explored_set:
+                    for n in Front:
+                        if neighbor == n[1]:
+                            infront = 1
+                    if infront == 0:
+                        new_heu_cost = self.heuristic(neighbor, goal)
+                        new_curr_cost = curr_cost + self.cost_map[neighbor]
+                        Front.append((new_heu_cost, neighbor, path + [neighbor], new_curr_cost))
+
+        return None, 0, 0, 0
 
     def a_star(self, start, goal):
         """
@@ -194,7 +269,35 @@ class YantraCollector:
                    - explored_count: Number of nodes in the explored list at the time of exiting the function.
                    - path_cost: Total cost of the path.
         """
-        pass  # TO DO 
+        # pass  # TO DO 
+        i = 0
+        Exp = []
+        Front = [(0+self.heuristic(start, goal), start, [start], 0)]
+        explored_set = set()
+        cost = 0
+        while(Front):
+            self.sort_to_priority(Front);
+            heu_cost, node, path, curr_cost = Front.pop(0)
+            if self.goal_test(node):
+                Exp.append(node)
+                self.total_frontier_nodes = len(Front)
+                self.total_explored_nodes = len(Exp)
+                self.reveal_next_yantra_or_exit()
+                return path, self.total_frontier_nodes, self.total_explored_nodes, curr_cost
+            Exp.append(node)
+            explored_set.add(node)
+            for neighbor in self.get_neighbors(node):
+                infront = 0
+                if neighbor not in explored_set:
+                    for n in Front:
+                        if neighbor == n[1]:
+                            infront = 1
+                    if infront == 0:
+                        new_curr_cost = curr_cost + self.cost_map[neighbor]
+                        new_heu_cost = new_curr_cost + self.heuristic(neighbor, goal)
+                        Front.append((new_heu_cost, neighbor, path + [neighbor], new_curr_cost))
+
+        return None, 0, 0, 0
 
     def solve(self, strategy):
         """
@@ -210,7 +313,36 @@ class YantraCollector:
                    - total_explored_nodes: Sum of explored_count across all searches.
                    - total_cost: Total cost of the path.
         """
-        pass  # TO DO 
+        # pass  # TO DO 
+        i=0
+        front_nodes = 0
+        exp_nodes = 0
+        tot_cost = 0
+        path = []
+        Y = [self.start]
+        S = self.find_all_yantras()
+        for i in range(1, len(S)+1):
+            Y.append(S[i])
+        Y.append(self.find_position('E'))
+        for i in range(0, len(Y)-1):
+            if(strategy == 'UCS'):
+                P, fron, exp, cost = self.ucs(Y[i], Y[i+1])
+            elif(strategy == 'GBFS'):
+                P, fron, exp, cost = self.gbfs(Y[i], Y[i+1])
+            elif(strategy == 'A*'):
+                P, fron, exp, cost = self.a_star(Y[i], Y[i+1])
+            if(Y[-1] != P[-1]):
+                P.remove(P[-1])
+            path.extend(P)
+            front_nodes += fron
+            exp_nodes += exp
+            tot_cost += cost
+        print('''['P', 2, '#', 5, 'Y2'],
+['T', 2, 3, '#', 1],
+[0, 7, 'Y1', 4, 2],
+['#', 'T', 2, 1, 3],
+[1, 3, 0, 2, 'E']''')
+        return path, front_nodes, exp_nodes, tot_cost
 
 if __name__ == "__main__":
     grid = [
@@ -222,7 +354,7 @@ if __name__ == "__main__":
     ]
 
     game = YantraCollector(grid)
-    strategy = "A*"  # or "UCS" or "GBFS"
+    strategy = "A*"  # or "A*" or "GBFS"
     result = game.solve(strategy)
     
     if result:
