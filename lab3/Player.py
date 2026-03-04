@@ -6,6 +6,64 @@ class AIPlayer:
         self.type = 'ai'
         self.player_string = 'Player {}:ai'.format(player_number)
 
+    def make_mov(self, next_state, col):
+        if(next_state[0][col] != 0):
+            raise Exception("col full")
+        for i in range(next_state.shape[0]-1, -1, -1):
+            if next_state[i][col] == 0:
+                next_state[i][col] = self.player_number
+                break
+
+    def max_val(self, board, depth, alpha, beta):
+        if depth == 0:
+            return self.evaluation_function(board)
+        v = -9999
+        valid_cols = []
+        for col in range(board.shape[1]):
+            if 0 in board[:,col]:
+                valid_cols.append(col)
+
+        if not valid_cols:
+            return self.evaluation_function(board)
+
+        actions = []
+        for col in valid_cols:
+            next_state = board.copy()
+            self.make_mov(next_state, col)
+            actions.append(next_state)
+
+        for a in actions:
+            v = max(v, self.min_val(a, depth - 1, alpha, beta))
+            if alpha >= beta:
+                break
+
+        return v
+    
+    def min_val(self, board, depth, alpha, beta):
+        if depth == 0:
+            return self.evaluation_function(board)
+        v = 9999
+        valid_cols = []
+        for col in range(board.shape[1]):
+            if 0 in board[:,col]:
+                valid_cols.append(col)
+
+        if not valid_cols:
+            return self.evaluation_function(board)
+
+        actions = []
+        for col in valid_cols:
+            next_state = board.copy()
+            self.make_mov(next_state, col)
+            actions.append(next_state)
+
+        for a in actions:
+            v = min(v, self.max_val(a, depth - 1, alpha, beta))
+            if alpha >= beta:
+                break
+
+        return v
+
     def get_alpha_beta_move(self, board):
         """
         Given the current state of the board, return the next move based on
@@ -26,7 +84,75 @@ class AIPlayer:
         RETURNS:
         The 0 based index of the column that represents the next move
         """
-        raise NotImplementedError('Whoops I don\'t know what to do')
+        depth = 7
+        valid_cols = []
+        for col in range(board.shape[1]):
+            if 0 in board[:,col]:
+                valid_cols.append(col)
+        result = valid_cols[0]
+        best = -9999
+        alpha = -9999
+        beta = 9999
+        for i in range(len(valid_cols)):
+            next_state = board.copy()
+            self.make_mov(next_state, valid_cols[i])
+            score = self.min_val(next_state, depth - 1, alpha, beta)
+            if(score > best):
+                result = valid_cols[i]
+                best = score
+        return result
+        #raise NotImplementedError('Whoops I don\'t know what to do')
+
+    def chance(self, board, depth):
+        if depth == 0:
+            return self.evaluation_function(board)
+        depth  -= 1
+        valid_cols = []
+        for col in range(board.shape[1]):
+            if 0 in board[:,col]:
+                valid_cols.append(col)
+
+        if not valid_cols:
+            return self.evaluation_function(board)
+        
+        actions = []
+        for col in valid_cols:
+            next_state = board.copy()
+            self.make_mov(next_state, col)
+            actions.append(next_state)
+
+
+        total = 0
+        for a in actions:
+            total += self.exp_max(a, depth)
+
+        return total/len(valid_cols)
+
+
+
+    def exp_max(self, board, depth):
+        if depth == 0:
+            return self.evaluation_function(board)
+        v = -9999
+        depth -= 1
+        valid_cols = []
+        for col in range(board.shape[1]):
+            if 0 in board[:,col]:
+                valid_cols.append(col)
+
+        if not valid_cols:
+            return self.evaluation_function(board)
+
+        actions = []
+        for col in valid_cols:
+            next_state = board.copy()
+            self.make_mov(next_state, col)
+            actions.append(next_state)
+
+        for a in actions:
+            v = max(v, self.chance(a, depth))
+
+        return v
 
     def get_expectimax_move(self, board):
         """
@@ -49,7 +175,23 @@ class AIPlayer:
         RETURNS:
         The 0 based index of the column that represents the next move
         """
-        raise NotImplementedError('Whoops I don\'t know what to do')
+        depth = 7
+        valid_cols = []
+        for col in range(board.shape[1]):
+            if 0 in board[:,col]:
+                valid_cols.append(col)
+        result = valid_cols[0]
+        best = -9999
+        for i in range(len(valid_cols)):
+            next_state = board.copy()
+            self.make_mov(next_state, valid_cols[i])
+            score = self.chance(next_state, depth - 1)
+            if(score > best):
+                result = valid_cols[i]
+                best = score
+        return result
+            
+        #raise NotImplementedError('Whoops I don\'t know what to do')
 
 
 
@@ -72,8 +214,6 @@ class AIPlayer:
         RETURNS:
         The utility value for the current board
         """
-       
-       
         return 0
 
 
