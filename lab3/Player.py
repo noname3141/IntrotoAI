@@ -84,7 +84,7 @@ class AIPlayer:
         RETURNS:
         The 0 based index of the column that represents the next move
         """
-        depth = 7
+        depth = 5
         valid_cols = []
         for col in range(board.shape[1]):
             if 0 in board[:,col]:
@@ -175,7 +175,7 @@ class AIPlayer:
         RETURNS:
         The 0 based index of the column that represents the next move
         """
-        depth = 7
+        depth = 5
         valid_cols = []
         for col in range(board.shape[1]):
             if 0 in board[:,col]:
@@ -197,6 +197,7 @@ class AIPlayer:
 
 
     def evaluation_function(self, board):
+        "float(-inf)"
         """
         Given the current stat of the board, return the scalar value that 
         represents the evaluation function for the current player
@@ -214,7 +215,177 @@ class AIPlayer:
         RETURNS:
         The utility value for the current board
         """
-        return 0
+        utility = 0
+
+        num_ones_1 = 0
+        num_twos_1 = 0
+        num_threes_1 = 0
+
+        num_ones_2 = 0
+        num_twos_2 = 0
+        num_threes_2 = 0
+
+        one_val = 1
+        two_val = 10
+        three_val = 100
+        three_one_val = 10
+        two_one_val = 2
+        three_two_val = 5
+        to_str = lambda a: ''.join(a.astype(str))
+
+        player1_win_str = '1111'
+        player2_win_str = '2222'
+
+        player1_3_str = ['0111', '1011', '1101', '1110']
+        player1_2_str = ['1100', '0110', '0011', '1010', '0101', '1001']
+        player1_1_str = ['1000', '0100', '0010', '0001']
+       
+        player2_3_str = ['0222', '2022', '2202', '2220']
+        player2_2_str = ['2200', '0220', '0022', '2020', '0202', '2002']
+        player2_1_str = ['2000', '0200', '0020', '0002']
+
+        '''
+        HORIZONTAL CHECKS
+        '''
+        for row in board:
+            strrow = to_str(row)
+            if strrow == '0000000':
+                continue
+            if player1_win_str in strrow:
+                #print("1 win state horiz")
+                return 1001
+            if player2_win_str in strrow:
+                #print("2 win state horiz")
+                return -1001
+            for arrangement in player1_1_str:
+                if arrangement in strrow:
+                    num_ones_1+=1
+            for arrangement in player2_1_str:
+                if arrangement in strrow:
+                    num_ones_2-=1
+            for arrangement in player1_2_str:
+                if arrangement in strrow:
+                    num_twos_1+=1
+            for arrangement in player2_2_str:
+                if arrangement in strrow:
+                    num_twos_2+=1
+            for arrangement in player1_3_str:
+                if arrangement in strrow:
+                    num_threes_1+=1
+            for arrangement in player2_3_str:
+                if arrangement in strrow:
+                    num_threes_2+=1
+
+        '''
+        VERTICAL CHECKS
+        '''
+        for row in board.T:
+            strrow = to_str(row)
+            if player1_win_str in strrow:
+                #print("1 win state vert")
+                return 1001
+            if player2_win_str in strrow:
+                #print("2 win state vert")
+                return -1001
+            if '0111' in strrow:
+                num_threes_1+=1
+                continue
+            if '0222' in strrow:
+                num_threes_2+=1
+                continue
+            if '0011' in strrow:
+                num_twos_1+=1
+                continue
+            if '0022' in strrow:
+                num_twos_2+=1
+                continue
+            if '0001' in strrow:
+                num_ones_1+=1
+                continue
+            if '0002' in strrow:
+                num_ones_2-=1
+                continue
+
+        '''
+        DIAGONAL CHECKS
+        '''
+
+        for op in [None, np.fliplr]:
+            op_board = op(board) if op else board
+            
+            root_diag = np.diagonal(op_board, offset=0).astype(int)
+            strrow = to_str(root_diag)
+
+
+            if player1_win_str in strrow:
+                #print("1 win state diag")
+                return 1001
+            if player2_win_str in strrow:
+                #print("2 win state diag")
+                return -1001
+            for arrangement in player1_1_str:
+                if arrangement in strrow:
+                    num_ones_1+=1
+            for arrangement in player2_1_str:
+                if arrangement in strrow:
+                    num_ones_2-=1
+            for arrangement in player1_2_str:
+                if arrangement in strrow:
+                    num_twos_1+=1
+            for arrangement in player2_2_str:
+                if arrangement in strrow:
+                    num_twos_2+=1
+            for arrangement in player1_3_str:
+                if arrangement in strrow:
+                    num_threes_1+=1
+            for arrangement in player2_3_str:
+                if arrangement in strrow:
+                    num_threes_2+=1
+
+            for i in range(1, board.shape[1]-3):
+                for offset in [i, -i]:
+                    diag = np.diagonal(op_board, offset=offset)
+                    diag = to_str(diag.astype(int))
+                    if player1_win_str in diag:
+                        return 1001
+                    if player2_win_str in strrow:
+                        return -1001
+                        #for arrangement in player1_1_str:
+                        #    if arrangement in strrow:
+                        #        num_ones_1+=1
+                        #for arrangement in player2_1_str:
+                        #    if arrangement in strrow:
+                        #        num_ones_2-=1
+                        #for arrangement in player1_2_str:
+                        #    if arrangement in strrow:
+                        #        num_twos_1+=1
+                        #for arrangement in player2_2_str:
+                        #    if arrangement in strrow:
+                        #        num_twos_2+=1
+                    for arrangement in player1_3_str:
+                        if arrangement in strrow:
+                            num_threes_1+=1
+                    for arrangement in player2_3_str:
+                        if arrangement in strrow:
+                            num_threes_2+=1
+
+
+        utility =   (num_ones_1 * one_val) + \
+                    (num_twos_1 * two_val) + \
+                    (num_threes_1 * three_val) + \
+                    ((num_threes_1 * num_twos_2) * three_two_val) + \
+                    ((num_twos_1 * num_ones_2) * two_one_val) + \
+                    ((num_threes_1 * num_ones_2) * three_one_val)
+        utility -=   (num_ones_2 * one_val) + \
+                    (num_twos_2 * two_val) + \
+                    (num_threes_2 * three_val) + \
+                    ((num_threes_2 * num_twos_1) * three_two_val) + \
+                    ((num_twos_2 * num_ones_1) * two_one_val) + \
+                    ((num_threes_2 * num_ones_1) * three_one_val)
+
+        #print(utility)
+        return utility
+        #return 0
 
 
 class RandomPlayer:
