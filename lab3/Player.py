@@ -93,6 +93,7 @@ class AIPlayer:
         best = -9999
         alpha = -9999
         beta = 9999
+        best_board = board.copy()
         for i in range(len(valid_cols)):
             next_state = board.copy()
             self.make_mov(next_state, valid_cols[i])
@@ -100,6 +101,15 @@ class AIPlayer:
             if(score > best):
                 result = valid_cols[i]
                 best = score
+                best_board = next_state
+        
+        #debugging
+        for i in range(board.shape[0]):
+            s = ""
+            for j in range(board.shape[1]):
+                s += str(best_board[i][j]) + " "
+            print(s)
+            print()
         return result
         #raise NotImplementedError('Whoops I don\'t know what to do')
 
@@ -182,6 +192,7 @@ class AIPlayer:
                 valid_cols.append(col)
         result = valid_cols[0]
         best = -9999
+        best_board = board.copy()
         for i in range(len(valid_cols)):
             next_state = board.copy()
             self.make_mov(next_state, valid_cols[i])
@@ -189,6 +200,14 @@ class AIPlayer:
             if(score > best):
                 result = valid_cols[i]
                 best = score
+                best_board = next_state
+        #debugging
+        for i in range(board.shape[0]):
+            s = ""
+            for j in range(board.shape[1]):
+                s += str(best_board[i][j]) + " "
+            print(s)
+            print()
         return result
             
         #raise NotImplementedError('Whoops I don\'t know what to do')
