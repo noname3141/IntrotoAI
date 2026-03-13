@@ -6,12 +6,12 @@ class AIPlayer:
         self.type = 'ai'
         self.player_string = 'Player {}:ai'.format(player_number)
 
-    def make_mov(self, next_state, col):
+    def make_mov(self, next_state, col, player_number):
         if(next_state[0][col] != 0):
             raise Exception("col full")
         for i in range(next_state.shape[0]-1, -1, -1):
             if next_state[i][col] == 0:
-                next_state[i][col] = self.player_number
+                next_state[i][col] = player_number
                 break
 
     def max_val(self, board, depth, alpha, beta):
@@ -29,11 +29,12 @@ class AIPlayer:
         actions = []
         for col in valid_cols:
             next_state = board.copy()
-            self.make_mov(next_state, col)
+            self.make_mov(next_state, col, 1)
             actions.append(next_state)
 
         for a in actions:
             v = max(v, self.min_val(a, depth - 1, alpha, beta))
+            alpha = max(alpha, v)
             if alpha >= beta:
                 break
 
@@ -54,11 +55,12 @@ class AIPlayer:
         actions = []
         for col in valid_cols:
             next_state = board.copy()
-            self.make_mov(next_state, col)
+            self.make_mov(next_state, col, 2)
             actions.append(next_state)
 
         for a in actions:
             v = min(v, self.max_val(a, depth - 1, alpha, beta))
+            beta = min(beta, v)
             if alpha >= beta:
                 break
 
@@ -96,27 +98,21 @@ class AIPlayer:
         best_board = board.copy()
         for i in range(len(valid_cols)):
             next_state = board.copy()
-            self.make_mov(next_state, valid_cols[i])
+            self.make_mov(next_state, valid_cols[i], self.player_number)
             score = self.min_val(next_state, depth - 1, alpha, beta)
             if(score > best):
                 result = valid_cols[i]
                 best = score
                 best_board = next_state
+            alpha = max(alpha, score)
         
         #debugging
-        for i in range(board.shape[0]):
-            s = ""
-            for j in range(board.shape[1]):
-                s += str(best_board[i][j]) + " "
-            print(s)
-            print()
         return result
         #raise NotImplementedError('Whoops I don\'t know what to do')
 
     def chance(self, board, depth):
         if depth == 0:
             return self.evaluation_function(board)
-        depth  -= 1
         valid_cols = []
         for col in range(board.shape[1]):
             if 0 in board[:,col]:
@@ -128,13 +124,13 @@ class AIPlayer:
         actions = []
         for col in valid_cols:
             next_state = board.copy()
-            self.make_mov(next_state, col)
+            self.make_mov(next_state, col, 2)
             actions.append(next_state)
 
 
         total = 0
         for a in actions:
-            total += self.exp_max(a, depth)
+            total += self.exp_max(a, depth - 1)
 
         return total/len(valid_cols)
 
@@ -144,7 +140,6 @@ class AIPlayer:
         if depth == 0:
             return self.evaluation_function(board)
         v = -9999
-        depth -= 1
         valid_cols = []
         for col in range(board.shape[1]):
             if 0 in board[:,col]:
@@ -156,11 +151,11 @@ class AIPlayer:
         actions = []
         for col in valid_cols:
             next_state = board.copy()
-            self.make_mov(next_state, col)
+            self.make_mov(next_state, col, 1)
             actions.append(next_state)
 
         for a in actions:
-            v = max(v, self.chance(a, depth))
+            v = max(v, self.chance(a, depth - 1))
 
         return v
 
@@ -195,21 +190,14 @@ class AIPlayer:
         best_board = board.copy()
         for i in range(len(valid_cols)):
             next_state = board.copy()
-            self.make_mov(next_state, valid_cols[i])
+            self.make_mov(next_state, valid_cols[i], self.player_number)
             score = self.chance(next_state, depth - 1)
             if(score > best):
                 result = valid_cols[i]
                 best = score
                 best_board = next_state
         #debugging
-        for i in range(board.shape[0]):
-            s = ""
-            for j in range(board.shape[1]):
-                s += str(best_board[i][j]) + " "
-            print(s)
-            print()
         return result
-            
         #raise NotImplementedError('Whoops I don\'t know what to do')
 
 
@@ -234,177 +222,67 @@ class AIPlayer:
         RETURNS:
         The utility value for the current board
         """
+        def scan_index(start):
+            """
+            THIS FUNCTION TAKES IN AN INDEX AND SCANS A SEGMENT OF 4 SLOTS IN ALL VALID DIRECTIONS
+
+            Metrics:    Threat by One block -> 0.25; Two blocks -> 5;
+                        Three blocks WITH immediate threat -> 100;
+                        Three blocks WITHOUT immediate threat -> 25
+
+                        Along with this, Three-block-threats from the opponent are given a lot more
+                        'score' than three-block-threats from us, to make sure their threat is blocked.
+            """
+            vectors = [(0,1), (1,0), (1,1), (1, -1)] # horiz, vert, p.diag, s.diag
+            one_score = 0.25
+            two_score = 5
+            three_score = 50
+            for vector in vectors:
+                end = (start[0] + 3*vector[0], start[1]+ 3*vector[1])
+                if(end[0] < len(board) and end[1] < len(board[0])):
+                    num_p1 = 0
+                    num_p2 = 0
+                    position_zero = start
+                    for i in range(4): # iters through directions
+
+                        if(board[start[0] + i * vector[0]][start[1] + i * vector[1]] == 1): num_p1+=1
+                        elif(board[start[0] + i * vector[0]][start[1] + i * vector[1]] == 2): num_p2+=1
+                        else: position_zero = (start[0] + i*vector[0], start[1] + i*vector[1])
+
+                    if num_p1 == 4: return 1001
+                    if num_p2 == 4: return -1001
+
+                    if num_p2 == 0:
+                        if num_p1 == 3: 
+                            if(position_zero[0] == len(board)-1 or board[position_zero[0]+1][position_zero[1]] != 0): 
+                                return three_score * (2 if self.player_number == 2 else 1)
+                            else: 
+                                return three_score * (0.5 if self.player_number == 2 else 0.25)
+
+                        if num_p1 == 2: return two_score * (1.2 if self.player_number == 2 else 1)
+                        if num_p1 == 1: return one_score
+                    
+                    if num_p1 == 0:
+                        if num_p2 == 3:
+                            if(position_zero[0] == len(board)-1 or board[position_zero[0]+1][position_zero[1]] != 0): 
+                                return -1 * three_score * (2 if self.player_number == 2 else 1)
+                            else: 
+                                return -1 * three_score * (0.5 if self.player_number == 2 else 0.25)
+                        if num_p2 == 2: return -1 * two_score * (1.2 if self.player_number == 1 else 1)
+                        if num_p2 == 1: return -1 * one_score
+            return 0
+
+
+
         utility = 0
-
-        num_ones_1 = 0
-        num_twos_1 = 0
-        num_threes_1 = 0
-
-        num_ones_2 = 0
-        num_twos_2 = 0
-        num_threes_2 = 0
-
-        one_val = 1
-        two_val = 10
-        three_val = 100
-        three_one_val = 10
-        two_one_val = 2
-        three_two_val = 5
-        to_str = lambda a: ''.join(a.astype(str))
-
-        player1_win_str = '1111'
-        player2_win_str = '2222'
-
-        player1_3_str = ['0111', '1011', '1101', '1110']
-        player1_2_str = ['1100', '0110', '0011', '1010', '0101', '1001']
-        player1_1_str = ['1000', '0100', '0010', '0001']
-       
-        player2_3_str = ['0222', '2022', '2202', '2220']
-        player2_2_str = ['2200', '0220', '0022', '2020', '0202', '2002']
-        player2_1_str = ['2000', '0200', '0020', '0002']
-
-        '''
-        HORIZONTAL CHECKS
-        '''
-        for row in board:
-            strrow = to_str(row)
-            if strrow == '0000000':
-                continue
-            if player1_win_str in strrow:
-                #print("1 win state horiz")
-                return 1001
-            if player2_win_str in strrow:
-                #print("2 win state horiz")
-                return -1001
-            for arrangement in player1_1_str:
-                if arrangement in strrow:
-                    num_ones_1+=1
-            for arrangement in player2_1_str:
-                if arrangement in strrow:
-                    num_ones_2-=1
-            for arrangement in player1_2_str:
-                if arrangement in strrow:
-                    num_twos_1+=1
-            for arrangement in player2_2_str:
-                if arrangement in strrow:
-                    num_twos_2+=1
-            for arrangement in player1_3_str:
-                if arrangement in strrow:
-                    num_threes_1+=1
-            for arrangement in player2_3_str:
-                if arrangement in strrow:
-                    num_threes_2+=1
-
-        '''
-        VERTICAL CHECKS
-        '''
-        for row in board.T:
-            strrow = to_str(row)
-            if player1_win_str in strrow:
-                #print("1 win state vert")
-                return 1001
-            if player2_win_str in strrow:
-                #print("2 win state vert")
-                return -1001
-            if '0111' in strrow:
-                num_threes_1+=1
-                continue
-            if '0222' in strrow:
-                num_threes_2+=1
-                continue
-            if '0011' in strrow:
-                num_twos_1+=1
-                continue
-            if '0022' in strrow:
-                num_twos_2+=1
-                continue
-            if '0001' in strrow:
-                num_ones_1+=1
-                continue
-            if '0002' in strrow:
-                num_ones_2-=1
-                continue
-
-        '''
-        DIAGONAL CHECKS
-        '''
-
-        for op in [None, np.fliplr]:
-            op_board = op(board) if op else board
-            
-            root_diag = np.diagonal(op_board, offset=0).astype(int)
-            strrow = to_str(root_diag)
-
-
-            if player1_win_str in strrow:
-                #print("1 win state diag")
-                return 1001
-            if player2_win_str in strrow:
-                #print("2 win state diag")
-                return -1001
-            for arrangement in player1_1_str:
-                if arrangement in strrow:
-                    num_ones_1+=1
-            for arrangement in player2_1_str:
-                if arrangement in strrow:
-                    num_ones_2-=1
-            for arrangement in player1_2_str:
-                if arrangement in strrow:
-                    num_twos_1+=1
-            for arrangement in player2_2_str:
-                if arrangement in strrow:
-                    num_twos_2+=1
-            for arrangement in player1_3_str:
-                if arrangement in strrow:
-                    num_threes_1+=1
-            for arrangement in player2_3_str:
-                if arrangement in strrow:
-                    num_threes_2+=1
-
-            for i in range(1, board.shape[1]-3):
-                for offset in [i, -i]:
-                    diag = np.diagonal(op_board, offset=offset)
-                    diag = to_str(diag.astype(int))
-                    if player1_win_str in diag:
-                        return 1001
-                    if player2_win_str in strrow:
-                        return -1001
-                        #for arrangement in player1_1_str:
-                        #    if arrangement in strrow:
-                        #        num_ones_1+=1
-                        #for arrangement in player2_1_str:
-                        #    if arrangement in strrow:
-                        #        num_ones_2-=1
-                        #for arrangement in player1_2_str:
-                        #    if arrangement in strrow:
-                        #        num_twos_1+=1
-                        #for arrangement in player2_2_str:
-                        #    if arrangement in strrow:
-                        #        num_twos_2+=1
-                    for arrangement in player1_3_str:
-                        if arrangement in strrow:
-                            num_threes_1+=1
-                    for arrangement in player2_3_str:
-                        if arrangement in strrow:
-                            num_threes_2+=1
-
-
-        utility =   (num_ones_1 * one_val) + \
-                    (num_twos_1 * two_val) + \
-                    (num_threes_1 * three_val) + \
-                    ((num_threes_1 * num_twos_2) * three_two_val) + \
-                    ((num_twos_1 * num_ones_2) * two_one_val) + \
-                    ((num_threes_1 * num_ones_2) * three_one_val)
-        utility -=   (num_ones_2 * one_val) + \
-                    (num_twos_2 * two_val) + \
-                    (num_threes_2 * three_val) + \
-                    ((num_threes_2 * num_twos_1) * three_two_val) + \
-                    ((num_twos_2 * num_ones_1) * two_one_val) + \
-                    ((num_threes_2 * num_ones_1) * three_one_val)
-
-        #print(utility)
+        for i in range(len(board)):
+            for j in range(len(board[0])):
+                res = scan_index((i,j))
+                if(abs(res) > 1000): # terminal state
+                    return res
+                utility+=res
         return utility
-        #return 0
+            
 
 
 class RandomPlayer:
