@@ -16,21 +16,21 @@ for i in data:
     n = 9
     m = 9
 
-    mat = [[0 for _ in range(m)] for _ in range(n)]
+    mat = [['0' for _ in range(m)] for _ in range(n)]
     for j in i:
         if row == 9:
             col += 1
         row %= 9
-        mat[row][col] = j
+        mat[col][row] = j
         row += 1
     
     games.append(mat)
 
 def cell(x, y, z):
-    return 100*x + 10*y + z + 1
+    return 81*x + 9*y + z + 1
 
 def decell(x):
-    return x//100
+    return (x - 1)//81 + 1
 
 solution = []
 base_clause = []
@@ -38,7 +38,7 @@ atleast_one = []
 atmax_one = []
 uniqrow = []
 uniqcol = []
-smaller_block = []
+smaller_box = []
     
 for rw in range(0, 9):
     for cl in range(0, 9):
@@ -75,7 +75,7 @@ for n1 in range(0, 3):
             for j in range(n1*3, n1*3 + 3):
                 for k in range(m1*3, m1*3 + 3):
                     l.append(cell(num, j, k))
-            smaller_block.append(l)
+            smaller_box.append(l)
 
 for group in atleast_one:
     base_clause.append(group)
@@ -89,10 +89,10 @@ for group in uniqrow:
 for group in uniqcol:
     base_clause.append(group)
 
-for group in smaller_block:
+for group in smaller_box:
     base_clause.append(group)
 
-for group in smaller_block:
+for group in smaller_box:
     for n1 in range(len(group)):
         for m1 in range(n1 + 1, len(group)):
             base_clause.append([-group[n1], -group[m1]])
@@ -115,13 +115,22 @@ for i in games:
     
     out = []
 
+    if sl == "UNSAT":
+        print("No Solution possible")
+        continue;
+
     for i in sl:
         if i > 0:
             out.append(i)
     
     for n1 in range(0, len(out)):
         for m1 in range(    n1 + 1, len(out)):
-            if(out[n1] % 100 > out[m1] % 100):
+            v1 = out[n1] - 1
+            v2 = out[m1] - 1
+
+            y1, z1 = (v1 % 81) // 9, v1 % 9
+            y2, z2 = (v2 % 81) // 9, v2 % 9
+            if((y1, z1) > (y2, z2)):
                 out[n1], out[m1] = out[m1], out[n1]
    
     final = []
@@ -140,8 +149,6 @@ for i in solution:
     for j in i:
         result += str(j)
     result += '\n'
-
-print(result)
 
 try:
     with open(output_file, "w") as f:
