@@ -30,8 +30,9 @@ def cell(x, y, z):
     return 100*x + 10*y + z + 1
 
 def decell(x):
-    return x//100, (x//10 % 10, x % 10)
+    return x//100
 
+solution = []
 base_clause = []
 atleast_one = []
 atmax_one = []
@@ -110,20 +111,37 @@ for i in games:
                 
     clauses.extend(init)
     
-    sol = psat.solve(clauses)
+    sl = psat.solve(clauses)
     
     out = []
 
-    for i in sol:
+    for i in sl:
         if i > 0:
-            num, (x1, y1) = decell(i)
-            print(x1, y1)
-            out.append(num)
-    print(out)
+            out.append(i)
+    
+    for n1 in range(0, len(out)):
+        for m1 in range(    n1 + 1, len(out)):
+            if(out[n1] % 100 > out[m1] % 100):
+                out[n1], out[m1] = out[m1], out[n1]
+   
+    final = []
+
+    for i in out:
+        final.append(decell(i))
+
+    solution.append(final)
+
 
 output_file = os.path.join(os.path.dirname(os.path.abspath(input_file)), "output.txt")
 
-result = 0
+result = ''
+
+for i in solution:
+    for j in i:
+        result += str(j)
+    result += '\n'
+
+print(result)
 
 try:
     with open(output_file, "w") as f:
